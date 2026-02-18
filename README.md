@@ -39,6 +39,9 @@ The script uses a centralized configuration for database access and API authenti
     ```bash
     python lichess_game_to_db.py
     ```
+     ```bash
+    docker compose up --build -d lichess_game_to_db
+    ```
 
 ## Database Mapping
 
