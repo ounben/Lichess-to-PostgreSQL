@@ -1,0 +1,40 @@
+ALTER TABLE metrics 
+    ADD COLUMN IF NOT EXISTS rated BOOLEAN,
+    ADD COLUMN IF NOT EXISTS game_variant TEXT,
+    ADD COLUMN IF NOT EXISTS game_status TEXT,
+    ADD COLUMN IF NOT EXISTS speed TEXT,
+    ADD COLUMN IF NOT EXISTS perf TEXT,
+    ADD COLUMN IF NOT EXISTS game_created_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS last_move_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS turns INTEGER,
+    ADD COLUMN IF NOT EXISTS color TEXT,
+    ADD COLUMN IF NOT EXISTS clock_initial INTEGER,
+    ADD COLUMN IF NOT EXISTS clock_increment INTEGER,
+    ADD COLUMN IF NOT EXISTS clock_total_time INTEGER,
+    ADD COLUMN IF NOT EXISTS white_user_id TEXT,
+    ADD COLUMN IF NOT EXISTS white_rating INTEGER,
+    ADD COLUMN IF NOT EXISTS white_rating_diff INTEGER,
+    ADD COLUMN IF NOT EXISTS black_user_id TEXT,
+    ADD COLUMN IF NOT EXISTS black_rating INTEGER,
+    ADD COLUMN IF NOT EXISTS black_rating_diff INTEGER,
+    ADD COLUMN IF NOT EXISTS winner TEXT,
+    ADD COLUMN IF NOT EXISTS url TEXT,
+    ADD COLUMN IF NOT EXISTS white_inaccuracy INTEGER,
+    ADD COLUMN IF NOT EXISTS white_mistake INTEGER,
+    ADD COLUMN IF NOT EXISTS white_blunder INTEGER,
+    ADD COLUMN IF NOT EXISTS white_acpl INTEGER,
+    ADD COLUMN IF NOT EXISTS white_accuracy INTEGER,
+    ADD COLUMN IF NOT EXISTS black_inaccuracy INTEGER,
+    ADD COLUMN IF NOT EXISTS black_mistake INTEGER,
+    ADD COLUMN IF NOT EXISTS black_blunder INTEGER,
+    ADD COLUMN IF NOT EXISTS black_acpl INTEGER,
+    ADD COLUMN IF NOT EXISTS black_accuracy INTEGER,
+    ADD COLUMN IF NOT EXISTS opening_eco TEXT,
+    ADD COLUMN IF NOT EXISTS opening_name TEXT;
+
+
+CREATE INDEX IF NOT EXISTS idx_metrics_batch_id ON metrics (batch_id);
+
+CREATE INDEX IF NOT EXISTS idx_metrics_update_queue 
+ON metrics (time DESC) 
+WHERE opening_eco IS NULL;
