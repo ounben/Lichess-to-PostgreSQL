@@ -1,0 +1,10 @@
+  lichess_game_to_db:
+    build: .
+    container_name: lichess_game_to_db
+    restart: always
+    # Hier überschreiben wir den CMD aus dem Dockerfile:
+    command: python lichess_game_to_db.py
+    depends_on:
+      - postgres_db
+    networks:
+      - fishnet_net
