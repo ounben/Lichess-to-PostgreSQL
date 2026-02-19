@@ -43,3 +43,6 @@ CREATE INDEX IF NOT EXISTS idx_metrics_batch_id ON metrics (batch_id);
 CREATE INDEX IF NOT EXISTS idx_metrics_update_queue 
 ON metrics (time DESC) 
 WHERE opening_eco IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_metrics_data_version_batch_id 
+ON metrics (data_version, batch_id);
