@@ -30,7 +30,12 @@ ALTER TABLE metrics
     ADD COLUMN IF NOT EXISTS black_acpl INTEGER,
     ADD COLUMN IF NOT EXISTS black_accuracy INTEGER,
     ADD COLUMN IF NOT EXISTS opening_eco TEXT,
-    ADD COLUMN IF NOT EXISTS opening_name TEXT;
+    ADD COLUMN IF NOT EXISTS opening_name TEXT,
+    ADD COLUMN white_title TEXT DEFAULT NULL,
+    ADD COLUMN black_title TEXT DEFAULT NULL,
+    ADD COLUMN white_is_patron BOOLEAN DEFAULT FALSE,
+    ADD COLUMN black_is_patron BOOLEAN DEFAULT FALSE,
+    ADD COLUMN data_version INTEGER DEFAULT 1;
 
 
 CREATE INDEX IF NOT EXISTS idx_metrics_batch_id ON metrics (batch_id);
