@@ -5,6 +5,7 @@ import time
 
 DB_CONFIG = "host=postgres_db dbname=fishnet_stats user=fish_admin password=passwort"
 LICHESS_TOKEN = "lip_bK..."
+CURRENT_DATA_VERSION = 2
 HEADERS = {
     "Authorization": f"Bearer {LICHESS_TOKEN}",
     "Accept": "application/json"    
@@ -22,13 +23,15 @@ def update_metrics_full():
     try:
         with psycopg.connect(DB_CONFIG) as conn:
             with conn.cursor() as cur:
-
-                cur.execute("SELECT batch_id FROM metrics WHERE opening_eco IS NULL ORDER BY time DESC LIMIT 1000;")
+                
+                
+                cur.execute("SELECT batch_id FROM metrics WHERE data_version < %s LIMIT 1000;", (CURRENT_DATA_VERSION,))
                 rows = cur.fetchall()
                 
                 for row in rows:
                     batch_id = row[0]
 
+                    # Validierung: batch_id darf nicht None oder leer sein
                     if not batch_id or str(batch_id).strip() == "":
                         continue
 
@@ -40,7 +43,7 @@ def update_metrics_full():
                         if response.status_code == 200:
                             data = response.json()
                             
-                         
+                            
                             clock = data.get("clock", {})
                             players = data.get("players", {})
                             white = players.get("white", {})
@@ -50,6 +53,16 @@ def update_metrics_full():
                             white_analysis = white.get("analysis", {})
                             black_analysis = black.get("analysis", {})
                             opening = data.get("opening", {})
+                            # white_is_bot = white.get("user", {}).get("title") == "BOT"
+                            # black_is_bot = black.get("user", {}).get("title") == "BOT"
+                            # white_is_patron = white.get("user", {}).get("patron", False)
+                            # black_is_patron = black.get("user", {}).get("patron", False)
+                            w_title = white_user.get("title")
+                            b_title = black_user.get("title")
+                            w_is_bot = (w_title == "BOT")
+                            b_is_bot = (b_title == "BOT")
+                            w_is_patron = white_user.get("patron", False)
+                            b_is_patron = black_user.get("patron", False)
 
                             db_params = (
                                 data.get("rated"),
@@ -66,7 +79,7 @@ def update_metrics_full():
                                 clock.get("totalTime"),                                
                                 white_user.get("id"),
                                 white.get("rating"),
-                                white.get("ratingDiff"),  # 
+                                white.get("ratingDiff"),  #
                                 black_user.get("id"),
                                 black.get("rating"),
                                 black.get("ratingDiff"),
@@ -84,7 +97,14 @@ def update_metrics_full():
                                 black_analysis.get("accuracy"),
                                 opening.get("eco"),
                                 opening.get("name"),
-                                batch_id # 
+                                w_title,
+                                b_title,
+                                w_is_bot,
+                                b_is_bot,
+                                w_is_patron,
+                                b_is_patron,
+                                CURRENT_DATA_VERSION,
+                                batch_id # Für die WHERE-Klausel
                             )
 
                             cur.execute("""
@@ -120,7 +140,14 @@ def update_metrics_full():
                                     black_acpl = %s,
                                     black_accuracy = %s,
                                     opening_eco = %s,
-                                    opening_name = %s
+                                    opening_name = %s,
+                                    white_title = %s,
+                                    black_title = %s,
+                                    white_is_bot = %s,
+                                    black_is_bot = %s,
+                                    white_is_patron = %s,
+                                    black_is_patron = %s,
+                                    data_version = %s
                                 WHERE batch_id = %s
                             """, db_params)
                             
@@ -137,15 +164,17 @@ def update_metrics_full():
                             cur.execute("""
                                 UPDATE metrics 
                                 SET game_status = '404_NOT_FOUND',
-                                    url = 'NOT_FOUND'
+                                    url = 'NOT_FOUND', 
+                                    data_version = %s
                                 WHERE batch_id = %s
-                            """, (batch_id,))
+                            """, (CURRENT_DATA_VERSION, batch_id))
                         conn.commit()
                         # time.sleep(0.05)
                         time.sleep(0.2)
 
                     except Exception as e:
                         print(f"Fehler bei Game {batch_id}: {e}")
+                        conn.rollback()
 
     except Exception as e:
         print(f"Datenbankfehler: {e}")
