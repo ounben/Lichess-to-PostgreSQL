@@ -20,20 +20,27 @@ QUERY_PARAMS = {
 }
 
 def update_metrics_full():
+    
+    has_data = False
     try:
         with psycopg.connect(DB_CONFIG) as conn:
             with conn.cursor() as cur:
                 
                 
-                cur.execute("SELECT batch_id FROM metrics WHERE data_version < %s LIMIT 1000;", (CURRENT_DATA_VERSION,))
+                # cur.execute("SELECT batch_id FROM metrics WHERE url IS NULL;")
+                # rows = cur.fetchall()
+                # cur.execute("SELECT batch_id FROM metrics WHERE data_version < %s ORDER BY time DESC LIMIT 1000;")
+                cur.execute("SELECT batch_id FROM metrics WHERE data_version < %s AND batch_id IS NOT Null AND batch_id != '' LIMIT 1000;", (CURRENT_DATA_VERSION,))
                 rows = cur.fetchall()
                 
-                for row in rows:
-                    batch_id = row[0]
+                if rows:
+                    has_data = True
+                    for row in rows:
+                        
+                        batch_id = row[0]
 
-                    # Validierung: batch_id darf nicht None oder leer sein
-                    if not batch_id or str(batch_id).strip() == "":
-                        continue
+                        if not batch_id or str(batch_id).strip() == "":
+                            continue
 
                     url_api = f"https://lichess.org/game/export/{batch_id}"
                     
@@ -43,7 +50,7 @@ def update_metrics_full():
                         if response.status_code == 200:
                             data = response.json()
                             
-                            
+                          
                             clock = data.get("clock", {})
                             players = data.get("players", {})
                             white = players.get("white", {})
@@ -70,7 +77,7 @@ def update_metrics_full():
                                 data.get("speed"),
                                 data.get("perf"),
                                 data.get("createdAt"),     # game_created_at
-                                data.get("lastMoveAt"),    # Keine SI-Konvertierung
+                                data.get("lastMoveAt"),    # 
                                 data.get("turns"),
                                 data.get("color"),
                                 data.get("status"),         #game_status
@@ -79,7 +86,7 @@ def update_metrics_full():
                                 clock.get("totalTime"),                                
                                 white_user.get("id"),
                                 white.get("rating"),
-                                white.get("ratingDiff"),  #
+                                white.get("ratingDiff"),  # 
                                 black_user.get("id"),
                                 black.get("rating"),
                                 black.get("ratingDiff"),
@@ -169,6 +176,7 @@ def update_metrics_full():
                                 WHERE batch_id = %s
                             """, (CURRENT_DATA_VERSION, batch_id))
                         conn.commit()
+                        #
                         # time.sleep(0.05)
                         time.sleep(0.2)
 
@@ -178,6 +186,14 @@ def update_metrics_full():
 
     except Exception as e:
         print(f"Datenbankfehler: {e}")
+    
+    return has_data
 
 if __name__ == "__main__":
-    update_metrics_full()
+    while True:
+            work_processed = update_metrics_full()
+            
+            if not work_processed:
+                
+                print("Alle Datensätze aktuell. 5s...")
+                time.sleep(5)
